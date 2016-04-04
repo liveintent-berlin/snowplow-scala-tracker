@@ -42,6 +42,7 @@ class AsyncEmitter private(host: String, port: Int) extends TEmitter {
 
   val queue = new LinkedBlockingQueue[Map[String, String]]()
 
+
   // 2 seconds timeout after 1st failed request
   val initialBackoffPeriod = 2000
 
