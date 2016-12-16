@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2015, 2016 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -242,28 +242,78 @@ class Tracker(emitters: Seq[TEmitter], namespace: String, appId: String, encodeB
    * @param country Delivery address, country
    * @param curency Currency
    * @param contexts list of additional contexts
+   * @param timestamp optional user-provided timestamp (ms) for the event
    * @return the tracker instance
    */
   def trackTransaction(
+    orderId: String,
+    affiliation: Option[String],
+    total: Double,
+    tax: Option[Double],
+    shipping: Option[Double],
+    city: Option[String],
+    state: Option[String],
+    country: Option[String],
+    currency: Option[String],
+    contexts: Seq[SelfDescribingJson] = Nil,
+    timestamp: Option[Timestamp] = None): Tracker = {
+
     val payload = new Payload()
 
     payload.add("e", "transaction")
-  )
+    payload.add("tr_orderid", orderId)
+    payload.add("tr_affiliation", affiliation)
+    payload.add("tr_total", total.toString)
+    payload.add("tr_tax", tax.map(_.toString))
+    payload.add("tr_shipping", shipping.map(_.toString))
+    payload.add("tr_city", city)
+    payload.add("tr_state", state)
+    payload.add("tr_country", country)
+    payload.add("tr_currency", currency)
+
+    track(completePayload(payload, contexts, timestamp))
+
+    this
+  }
+
   /**
    * @param orderId Order ID
-   * @param sku Product SKU	
+   * @param sku Product SKU
    * @param name Product name
    * @param category Product category
    * @param price Product unit price
    * @param quantity Number of product in transaction
    * @param currency The currency the price is expressed in
-   * @param context Custom context relating to the event
+   * @param contexts Custom context relating to the event
+   * @param timestamp optional user-provided timestamp (ms) for the event
+   * @return the tracker instance
    */
   def trackTransactionItem(
+    orderId: String,
+    sku: String,
+    name: Option[String],
+    category: Option[String],
+    price: Double,
+    quantity: Double,
+    currency: Option[String],
+    contexts: List[SelfDescribingJson] = Nil,
+    timestamp: Option[Timestamp] = None): Tracker = {
+
     val payload = new Payload()
 
     payload.add("e", "transaction_item")
-  )
+    payload.add("ti_orderid", orderId)
+    payload.add("ti_sku", sku)
+    payload.add("ti_name", name)
+    payload.add("ti_category", category)
+    payload.add("ti_price", price.toString)
+    payload.add("ti_quantity", quantity.toString)
+    payload.add("ti_currency", currency)
+
+    track(completePayload(payload, contexts, timestamp))
+
+    this
+  }
 
   /**
    * Set the Subject for the tracker
