@@ -22,6 +22,8 @@ import scala.language.implicitConversions
 import scala.util.{ Failure, Success }
 
 import emitters.TEmitter
+import org.json4s.JsonDSL._
+
 
 /**
  * Tracker class
@@ -313,6 +315,84 @@ class Tracker(emitters: Seq[TEmitter], namespace: String, appId: String, encodeB
     track(completePayload(payload, contexts, timestamp))
 
     this
+  }
+
+  /**
+   * Track an add-to-cart event
+   *
+   * @param sku Required. Item's SKU code.
+   * @param name Optional. Product name.
+   * @param category Optional. Product category.
+   * @param unitPrice Optional. Product price.
+   * @param quantity Required. Quantity added.
+   * @param currency Optional. Product price currency.
+   * @param context Optional. Context relating to the event.
+   * @param timestamp optional user-provided timestamp (ms) for the event
+   * @return the tracker instance
+   */
+  def trackAddToCart(
+    sku: String,
+    name: Option[String],
+    category: Option[String],
+    unitPrice: Option[Double],
+    quantity: Double,
+    currency: Option[Double],
+    contexts: List[SelfDescribingJson] = Nil,
+    timestamp: Option[Timestamp] = None): Tracker = {
+
+    val eventJson =
+      ("sku" -> sku) ~
+        ("name" -> name) ~
+        ("category" -> category) ~
+        ("unitPrice" -> unitPrice) ~
+        ("quantity" -> quantity) ~
+        ("currency" -> currency)
+
+    trackUnstructEvent(
+      SelfDescribingJson(
+        schema = "iglu:com.snowplowanalytics.snowplow/add_to_cart/jsonschema/1-0-0",
+        data = eventJson),
+      contexts,
+      timestamp)
+  }
+
+  /**
+   * Track a remove-from-cart event
+   *
+   * @param sku Required. Item's SKU code.
+   * @param name Optional. Product name.
+   * @param category Optional. Product category.
+   * @param unitPrice Optional. Product price.
+   * @param quantity Required. Quantity removed.
+   * @param currency Optional. Product price currency.
+   * @param context Optional. Context relating to the event.
+   * @param timestamp optional user-provided timestamp (ms) for the event
+   * @return the tracker instance
+   */
+  def trackRemoveFromCart(
+    sku: String,
+    name: Option[String],
+    category: Option[String],
+    unitPrice: Option[Double],
+    quantity: Double,
+    currency: Option[Double],
+    contexts: List[SelfDescribingJson] = Nil,
+    timestamp: Option[Timestamp] = None): Tracker = {
+
+    val eventJson =
+      ("sku" -> sku) ~
+        ("name" -> name) ~
+        ("category" -> category) ~
+        ("unitPrice" -> unitPrice) ~
+        ("quantity" -> quantity) ~
+        ("currency" -> currency)
+
+    trackUnstructEvent(
+      SelfDescribingJson(
+        schema = "iglu:com.snowplowanalytics.snowplow/remove_from_cart/jsonschema/1-0-0",
+        data = eventJson),
+      contexts,
+      timestamp)
   }
 
   /**
