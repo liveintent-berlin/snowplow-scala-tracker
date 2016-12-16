@@ -230,6 +230,42 @@ class Tracker(emitters: Seq[TEmitter], namespace: String, appId: String, encodeB
   }
 
   /**
+   * Record view of transaction
+   *
+   * @param orderId Order ID
+   * @param affiliation Transaction affiliation
+   * @param total Total transaction value
+   * @param tax Total tax included in transaction value
+   * @param shipping Delivery cost charged
+   * @param city Delivery address, city
+   * @param state Delivery address, state
+   * @param country Delivery address, country
+   * @param curency Currency
+   * @param contexts list of additional contexts
+   * @return the tracker instance
+   */
+  def trackTransaction(
+    val payload = new Payload()
+
+    payload.add("e", "transaction")
+  )
+  /**
+   * @param orderId Order ID
+   * @param sku Product SKU	
+   * @param name Product name
+   * @param category Product category
+   * @param price Product unit price
+   * @param quantity Number of product in transaction
+   * @param currency The currency the price is expressed in
+   * @param context Custom context relating to the event
+   */
+  def trackTransactionItem(
+    val payload = new Payload()
+
+    payload.add("e", "transaction_item")
+  )
+
+  /**
    * Set the Subject for the tracker
    * The subject's configuration will be attached to every event
    *
