@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2013-2015 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2013-2016 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -13,6 +13,8 @@
 import sbt._
 import Keys._
 
+import com.liveintent.sbt.LiveIntentPlugin
+
 object SnowplowTrackerBuild extends Build {
 
   import Dependencies._
@@ -25,6 +27,7 @@ object SnowplowTrackerBuild extends Build {
 
   // Define our project, with basic project information and library dependencies
   lazy val project = Project("snowplow-scala-tracker", file("."))
+    .enablePlugins(LiveIntentPlugin)
     .settings(buildSettings: _*)
     .settings(
       libraryDependencies <++= Dependencies.onVersion(
