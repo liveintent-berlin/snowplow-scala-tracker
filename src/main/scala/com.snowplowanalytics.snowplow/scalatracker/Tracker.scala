@@ -336,7 +336,7 @@ class Tracker(emitters: Seq[TEmitter], namespace: String, appId: String, encodeB
     category: Option[String] = None,
     unitPrice: Option[Double] = None,
     quantity: Double,
-    currency: Option[Double] = None,
+    currency: Option[String] = None,
     contexts: List[SelfDescribingJson] = Nil,
     timestamp: Option[Timestamp] = None): Tracker = {
 
@@ -375,7 +375,7 @@ class Tracker(emitters: Seq[TEmitter], namespace: String, appId: String, encodeB
     category: Option[String] = None,
     unitPrice: Option[Double] = None,
     quantity: Double,
-    currency: Option[Double] = None,
+    currency: Option[String] = None,
     contexts: List[SelfDescribingJson] = Nil,
     timestamp: Option[Timestamp] = None): Tracker = {
 
