@@ -249,14 +249,14 @@ class Tracker(emitters: Seq[TEmitter], namespace: String, appId: String, encodeB
    */
   def trackTransaction(
     orderId: String,
-    affiliation: Option[String],
+    affiliation: Option[String] = None,
     total: Double,
-    tax: Option[Double],
-    shipping: Option[Double],
-    city: Option[String],
-    state: Option[String],
-    country: Option[String],
-    currency: Option[String],
+    tax: Option[Double] = None,
+    shipping: Option[Double] = None,
+    city: Option[String] = None,
+    state: Option[String] = None,
+    country: Option[String] = None,
+    currency: Option[String] = None,
     contexts: Seq[SelfDescribingJson] = Nil,
     timestamp: Option[Timestamp] = None): Tracker = {
 
@@ -293,11 +293,11 @@ class Tracker(emitters: Seq[TEmitter], namespace: String, appId: String, encodeB
   def trackTransactionItem(
     orderId: String,
     sku: String,
-    name: Option[String],
-    category: Option[String],
+    name: Option[String] = None,
+    category: Option[String] = None,
     price: Double,
     quantity: Double,
-    currency: Option[String],
+    currency: Option[String] = None,
     contexts: List[SelfDescribingJson] = Nil,
     timestamp: Option[Timestamp] = None): Tracker = {
 
@@ -332,11 +332,11 @@ class Tracker(emitters: Seq[TEmitter], namespace: String, appId: String, encodeB
    */
   def trackAddToCart(
     sku: String,
-    name: Option[String],
-    category: Option[String],
-    unitPrice: Option[Double],
+    name: Option[String] = None,
+    category: Option[String] = None,
+    unitPrice: Option[Double] = None,
     quantity: Double,
-    currency: Option[Double],
+    currency: Option[Double] = None,
     contexts: List[SelfDescribingJson] = Nil,
     timestamp: Option[Timestamp] = None): Tracker = {
 
@@ -371,11 +371,11 @@ class Tracker(emitters: Seq[TEmitter], namespace: String, appId: String, encodeB
    */
   def trackRemoveFromCart(
     sku: String,
-    name: Option[String],
-    category: Option[String],
-    unitPrice: Option[Double],
+    name: Option[String] = None,
+    category: Option[String] = None,
+    unitPrice: Option[Double] = None,
     quantity: Double,
-    currency: Option[Double],
+    currency: Option[Double] = None,
     contexts: List[SelfDescribingJson] = Nil,
     timestamp: Option[Timestamp] = None): Tracker = {
 
