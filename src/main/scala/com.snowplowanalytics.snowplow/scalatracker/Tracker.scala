@@ -262,7 +262,7 @@ class Tracker(emitters: Seq[TEmitter], namespace: String, appId: String, encodeB
 
     val payload = new Payload()
 
-    payload.add("e", "transaction")
+    payload.add("e", "tr")
     payload.add("tr_id", orderId)
     payload.add("tr_af", affiliation)
     payload.add("tr_tt", total.toString)
@@ -296,14 +296,14 @@ class Tracker(emitters: Seq[TEmitter], namespace: String, appId: String, encodeB
     name: Option[String] = None,
     category: Option[String] = None,
     price: Double,
-    quantity: Double,
+    quantity: Int,
     currency: Option[String] = None,
     contexts: List[SelfDescribingJson] = Nil,
     timestamp: Option[Timestamp] = None): Tracker = {
 
     val payload = new Payload()
 
-    payload.add("e", "transaction_item")
+    payload.add("e", "ti")
     payload.add("ti_id", orderId)
     payload.add("ti_sk", sku)
     payload.add("ti_nm", name)
@@ -335,7 +335,7 @@ class Tracker(emitters: Seq[TEmitter], namespace: String, appId: String, encodeB
     name: Option[String] = None,
     category: Option[String] = None,
     unitPrice: Option[Double] = None,
-    quantity: Double,
+    quantity: Int,
     currency: Option[String] = None,
     contexts: List[SelfDescribingJson] = Nil,
     timestamp: Option[Timestamp] = None): Tracker = {
