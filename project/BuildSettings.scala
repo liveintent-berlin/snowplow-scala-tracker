@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2013-2018 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -19,30 +19,21 @@ import com.typesafe.sbt.SbtGit._
 
 object BuildSettings {
 
-  // Basic settings for our app
-  lazy val basicSettings = Seq[Setting[_]](
-    organization          :=  "com.snowplowanalytics",
-    git.baseVersion       :=  "0.3.1-li",
-    description           :=  "Scala tracker for Snowplow",
-    scalaVersion          :=  "2.10.6",
-    crossScalaVersions    :=  Seq("2.10.6", "2.11.5"),
-    scalacOptions         :=  Seq("-deprecation", "-encoding", "utf8"),
-    resolvers             ++= Dependencies.resolutionRepos
+  // Makes our SBT settings available in runtime
+  lazy val scalifySettings = Seq(
+    sourceGenerators in Compile += Def.task {
+      val file = (sourceManaged in Compile).value / "settings.scala"
+      IO.write(file, """package com.snowplowanalytics.snowplow.scalatracker.generated
+                       |object ProjectSettings {
+                       |  val version = "%s"
+                       |  val name = "%s"
+                       |  val organization = "%s"
+                       |  val scalaVersion = "%s"
+                       |}
+                       |""".stripMargin.format(version.value, name.value, organization.value, scalaVersion.value))
+      Seq(file)
+    }.taskValue
   )
-
-  // Makes our SBT app settings available from within the ETL
-  lazy val scalifySettings = Seq(sourceGenerators in Compile <+= (sourceManaged in Compile, version, name, organization, scalaVersion) map { (d, v, n, o, sv) =>
-    val file = d / "settings.scala"
-    IO.write(file, """package com.snowplowanalytics.snowplow.scalatracker.generated
-      |object ProjectSettings {
-      |  val version = "%s"
-      |  val name = "%s"
-      |  val organization = "%s"
-      |  val scalaVersion = "%s"
-      |}
-      |""".stripMargin.format(v, n, o, sv))
-    Seq(file)
-  })
 
   // // Bintray publishing settings
   // lazy val publishSettings = bintraySettings ++ Seq[Setting[_]](
@@ -53,7 +44,7 @@ object BuildSettings {
 
   // // Maven Central publishing settings
   // lazy val mavenCentralExtras = Seq[Setting[_]](
-  //   pomIncludeRepository := { x => false },
+  //   pomIncludeRepository := { _ => false },
   //   homepage := Some(url("http://snowplowanalytics.com")),
   //   scmInfo := Some(ScmInfo(url("https://github.com/snowplow/snowplow-scala-tracker"), "scm:git@github.com:snowplow/snowplow-scala-tracker.git")),
   //   pomExtra := (
@@ -67,5 +58,5 @@ object BuildSettings {
   //     </developers>)
   // )
 
-  lazy val buildSettings = basicSettings ++ scalifySettings // ++ publishSettings ++ mavenCentralExtras
+  lazy val buildSettings = scalifySettings
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2015-2018 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -10,28 +10,32 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow.scalatracker.emitters
+package com.snowplowanalytics.snowplow.scalatracker
+package emitters
 
-// Java
 import java.util.concurrent.LinkedBlockingQueue
 
-// Scala
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext
 
+import TEmitter._
 
 object AsyncBatchEmitter {
   // Avoid starting thread in constructor
   /**
    * Start async emitter with batch event payload
    *
-   * @param host collector host
-   * @param port collector port
+   * @param host collector host name
+   * @param port collector port number, default 80 for http and 443 for https
    * @param bufferSize quantity of events in batch request
    * @param https should this use the https scheme
+   * @param callback optional callback executed after each sent event
+   * @param ec thread pool to send HTTP requests to collector
    * @return emitter
    */
-  def createAndStart(host: String, port: Int = 80, bufferSize: Int = 50, https: Boolean = false): AsyncBatchEmitter = {
-    val emitter = new AsyncBatchEmitter(host, port, bufferSize, https = https)
+  def createAndStart(host: String, port: Option[Int] = None, https: Boolean = false, bufferSize: Int = 50, callback: Option[Callback] = None)(implicit ec: ExecutionContext): AsyncBatchEmitter = {
+    val collector = CollectorParams.construct(host, port, https)
+    val emitter = new AsyncBatchEmitter(ec, collector, bufferSize, callback)
     emitter.startWorker()
     emitter
   }
@@ -40,27 +44,26 @@ object AsyncBatchEmitter {
 /**
  * Asynchronous batch emitter
  * Store events in buffer and send them with POST request when buffer exceeds `bufferSize`
+ * Backed by `java.util.concurrent.LinkedBlockingQueue`, which has
+ * capacity of `Int.MaxValue` will block thread when buffer reach capacity
  *
- * @param host collector host
- * @param port collector port
+ * @param ec thread pool for async event sending
+ * @param collector collector preferences
  * @param bufferSize quantity of events in a batch request
- * @param https should this use the https scheme
  */
-class AsyncBatchEmitter private(host: String, port: Int, bufferSize: Int, https: Boolean = false) extends TEmitter {
-
-  val queue = new LinkedBlockingQueue[Seq[Map[String, String]]]()
-
-  // 2 seconds timeout after 1st failed request
-  val initialBackoffPeriod = 2000
+class AsyncBatchEmitter private(ec: ExecutionContext, collector: CollectorParams, bufferSize: Int, callback: Option[Callback]) extends TEmitter {
 
   private var buffer = ListBuffer[Map[String, String]]()
 
+  /** Queue of HTTP requests */
+  val queue = new LinkedBlockingQueue[CollectorRequest]()
+
   // Start consumer thread synchronously trying to send events to collector
   val worker = new Thread {
-    override def run {
+    override def run() {
       while (true) {
         val batch = queue.take()
-        RequestUtils.retryPostUntilSuccessful(host, batch, port, initialBackoffPeriod, https = https)
+        submit(queue, ec, callback, collector, batch)
       }
     }
   }
@@ -73,11 +76,14 @@ class AsyncBatchEmitter private(host: String, port: Int, bufferSize: Int, https:
    *
    * @param event Fully assembled event
    */
-  def input(event: Map[String, String]): Unit = {
-    buffer.append(event)
-    if (buffer.size >= bufferSize) {
-      queue.put(buffer)
-      buffer = ListBuffer[Map[String, String]]()
+  def input(event: EmitterPayload): Unit = {
+    // Multiple threads can input via same tracker and override buffer
+    buffer.synchronized {
+      buffer.append(event)
+      if (buffer.size >= bufferSize) {
+        queue.put(PostCollectorRequest(1, buffer.toList))
+        buffer = ListBuffer[Map[String, String]]()
+      }
     }
   }
 

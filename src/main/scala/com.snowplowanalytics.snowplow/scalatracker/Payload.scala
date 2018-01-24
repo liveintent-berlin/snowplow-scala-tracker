@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2015-2018 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -12,18 +12,20 @@
  */
 package com.snowplowanalytics.snowplow.scalatracker
 
-import org.apache.commons.codec.binary.Base64
+import java.util.Base64
 
 import org.json4s._
-import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 
 import scala.collection.mutable.{Map => MMap}
 
+import emitters.TEmitter.EmitterPayload
+
 /**
  * Contains the map of key-value pairs making up an event
+ * Must be used within single function as **not thread-safe**
  */
-class Payload {
+private[scalatracker] class Payload {
 
   val Encoding = "UTF-8"
 
@@ -54,11 +56,7 @@ class Payload {
     }
   }
 
-  /**
-   * Add a map of key-value pairs one by one
-   *
-   * @param dict
-   */
+  /** Add a map of key-value pairs one by one */
   def addDict(dict: Map[String, String]): Unit = {
     dict foreach {
       case (k, v) => add(k, v)
@@ -68,13 +66,13 @@ class Payload {
   /**
    * Stringify a JSON and add it
    *
-   * @param json
+   * @param json JSON object to encode
    * @param encodeBase64 Whether to base 64 encode the JSON
    * @param typeWhenEncoded Key to use if encodeBase64 is true
    * @param typeWhenNotEncoded Key to use if encodeBase64 is false
    */
   def addJson(
-    json: JObject,
+    json: JValue,
     encodeBase64: Boolean,
     typeWhenEncoded: String,
     typeWhenNotEncoded: String): Unit = {
@@ -82,7 +80,7 @@ class Payload {
     val jsonString = compact(render(json))
 
     if (encodeBase64) {
-      add(typeWhenEncoded, new String(Base64.encodeBase64(jsonString.getBytes(Encoding)), Encoding))
+      add(typeWhenEncoded, new String(Base64.getEncoder.encode(jsonString.getBytes(Encoding)), Encoding))
     } else {
       add(typeWhenNotEncoded, jsonString)
     }
@@ -93,6 +91,5 @@ class Payload {
    *
    * @return Event map
    */
-  def get(): Map[String, String] = Map(nvPairs.toList: _*)
-
+  def get: EmitterPayload = Map(nvPairs.toList: _*)
 }

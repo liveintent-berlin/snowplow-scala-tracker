@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2015-2018 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -10,24 +10,30 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow.scalatracker.emitters
+package com.snowplowanalytics.snowplow.scalatracker
+package emitters
 
-// Java
 import java.util.concurrent.LinkedBlockingQueue
 
+import scala.concurrent.ExecutionContext
+
+import TEmitter._
 
 object AsyncEmitter {
   // Avoid starting thread in constructor
   /**
    * Start async emitter with single event payload
+   * Backed by `java.util.concurrent.LinkedBlockingQueue`, which has
+   * capacity of `Int.MaxValue` will block thread when buffer reach capacity
    *
    * @param host collector host
    * @param port collector port
    * @param https should this use the https scheme
    * @return emitter
    */
-  def createAndStart(host: String, port: Int = 80, https: Boolean = false): AsyncEmitter = {
-    val emitter = new AsyncEmitter(host, port, https)
+  def createAndStart(host: String, port: Option[Int] = None, https: Boolean = false, callback: Option[Callback])(implicit ec: ExecutionContext): AsyncEmitter = {
+    val collector = CollectorParams.construct(host, port, https)
+    val emitter = new AsyncEmitter(ec, collector, callback)
     emitter.startWorker()
     emitter
   }
@@ -36,23 +42,20 @@ object AsyncEmitter {
 /**
  * Asynchronous emitter using LinkedBlockingQueue
  *
- * @param host collector host
- * @param port collector port
- * @param https should this use the https scheme
+ * @param ec thread pool for async event sending
+ * @param collector collector preferences
+ * @param callback optional callback executed after each sent event
  */
-class AsyncEmitter private(host: String, port: Int, https: Boolean = false) extends TEmitter {
+class AsyncEmitter private(ec: ExecutionContext, collector: CollectorParams, callback: Option[Callback]) extends TEmitter {
 
-  val queue = new LinkedBlockingQueue[Map[String, String]]()
+  /** Queue of HTTP requests */
+  val queue = new LinkedBlockingQueue[CollectorRequest]()
 
-  // 2 seconds timeout after 1st failed request
-  val initialBackoffPeriod = 2000
-
-  // TODO: consider move retryGet/PostUntilSuccessful with adding of stm to Emitter (it's not requests logic)
   val worker = new Thread {
-    override def run {
+    override def run() {
       while (true) {
         val event = queue.take()
-        RequestUtils.retryGetUntilSuccessful(host, event, port, initialBackoffPeriod, https = https)
+        submit(queue, ec, callback, collector, event)
       }
     }
   }
@@ -65,8 +68,8 @@ class AsyncEmitter private(host: String, port: Int, https: Boolean = false) exte
    *
    * @param event Fully assembled event
    */
-  def input(event: Map[String, String]): Unit = {
-    queue.put(event)
+  def input(event: EmitterPayload): Unit = {
+    queue.put(GetCollectorRequest(1, event))
   }
 
   private def startWorker(): Unit = {
