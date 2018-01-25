@@ -13,13 +13,14 @@
 lazy val root = project.in(file("."))
   .settings(Seq[Setting[_]](
     organization       := "com.snowplowanalytics",
-    version            := "0.5.0-M3-li",
+    git.baseVersion    := "0.5.0-M3-li",
     description        := "Scala tracker for Snowplow",
     name               := "snowplow-scala-tracker",
     scalaVersion       := "2.11.12",
     scalacOptions      := Seq("-deprecation", "-encoding", "utf8"),
     javacOptions       ++= Seq("-source", "1.8", "-target", "1.8")
   ))
+  .enablePlugins(LiveIntentPlugin)
   .settings(BuildSettings.buildSettings)
   .settings(Seq(
     shellPrompt := { _ => name.value + " > " }
