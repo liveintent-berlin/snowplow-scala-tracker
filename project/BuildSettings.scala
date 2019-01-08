@@ -24,7 +24,7 @@ object BuildSettings {
     organization          :=  "com.snowplowanalytics",
     git.baseVersion       :=  "0.3.1-li",
     description           :=  "Scala tracker for Snowplow",
-    scalaVersion          :=  "2.10.6",
+    scalaVersion          :=  "2.12.7",
     crossScalaVersions    :=  Seq("2.10.6", "2.11.5"),
     scalacOptions         :=  Seq("-deprecation", "-encoding", "utf8"),
     resolvers             ++= Dependencies.resolutionRepos
